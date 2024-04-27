@@ -166,7 +166,7 @@ const newContentsOutline = (target, options) => {
 
   if (true === options.moveToBefore1stHeading) {
     const firstHeading = newHeadings[0];
-    const moveTo = 0 < options.moveTo.length ? options.moveTo : undefined;
+    const moveTo = options?.moveTo;
     if ( !! moveTo ) {
       const t = getReferenceElement(firstHeading, moveTo);
       t.parentNode.insertBefore(target, t);
