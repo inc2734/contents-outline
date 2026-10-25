@@ -24,6 +24,62 @@ const createOutline = (document, headings) => {
   return document.querySelector('.contents-outline');
 };
 
+test('uses default headings when options are omitted', () => {
+  const document = setDocument(`
+    <div class="contents-outline-container"><div class="contents-outline"></div></div>
+    <h1>Excluded level 1</h1>
+    <h2>Native level 2</h2>
+    <h3>Native level 3</h3>
+  `);
+
+  new ContentsOutline('.contents-outline-container');
+
+  const container = document.querySelector('.contents-outline-container');
+  const links = Array.from(container.querySelectorAll('a'));
+  assert.deepEqual(links.map((link) => link.textContent), [ 'Native level 2', 'Native level 3' ]);
+  assert.deepEqual(links.map((link) => link.getAttribute('href')), [ '#co-index-0', '#co-index-1' ]);
+  assert.equal(container.nextElementSibling, document.querySelector('h2'));
+  assert.equal(container.getAttribute('data-initialized'), 'true');
+});
+
+for (const collectionType of [ 'NodeList', 'Array' ]) {
+  test(`accepts explicitly supplied ${collectionType} headings`, () => {
+    const document = setDocument(`
+      <div class="contents-outline-container"><div class="contents-outline"></div></div>
+      <h2>Excluded heading</h2>
+      <h3 class="included">First included heading</h3>
+      <h3 class="included" style="display: none">Hidden heading</h3>
+      <h3 class="included">Second included heading</h3>
+    `);
+    const headings = document.querySelectorAll('.included');
+
+    ContentsOutline(document.querySelector('.contents-outline-container'), {
+      headings: 'Array' === collectionType ? Array.from(headings) : headings,
+      moveToBefore1stHeading: false,
+    });
+
+    const links = Array.from(document.querySelectorAll('.contents-outline a'));
+    assert.deepEqual(links.map((link) => link.textContent), [ 'First included heading', 'Second included heading' ]);
+    assert.equal(document.querySelector('h2').hasAttribute('id'), false);
+    assert.equal(document.querySelector('[style]').hasAttribute('id'), false);
+  });
+}
+
+test('removes the outline when the supplied NodeList is empty', () => {
+  const document = setDocument(`
+    <div class="contents-outline-container"><div class="contents-outline"></div></div>
+    <h2>Excluded heading</h2>
+  `);
+
+  ContentsOutline(document.querySelector('.contents-outline-container'), {
+    headings: document.querySelectorAll('h3'),
+    moveToBefore1stHeading: false,
+  });
+
+  assert.equal(document.querySelector('.contents-outline-container'), null);
+  assert.equal(document.querySelector('h2').hasAttribute('id'), false);
+});
+
 test('treats native and ARIA headings with the same level equally', () => {
   const document = setDocument(`
     <div class="contents-outline-container"><div class="contents-outline"></div></div>
